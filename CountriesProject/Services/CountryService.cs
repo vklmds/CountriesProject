@@ -42,11 +42,7 @@ namespace CountriesProject.Services
         public async Task<CountryInfo> GetCountry(HttpClient httpClient, string RestCountryApiUrl)
         {
             var response = await httpClient.GetAsync(RestCountryApiUrl);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                return null;
-            }
+            response.EnsureSuccessStatusCode();
             var content = await response.Content.ReadAsStringAsync();
             //var countryInfo = JsonSerializer.Deserialize<CountryInfo>(content);                                         
 

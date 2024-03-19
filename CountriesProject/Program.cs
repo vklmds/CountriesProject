@@ -13,10 +13,12 @@ builder.Services.AddScoped<CountryService>();
 builder.Services.AddScoped<ICountryRepository,CountryRepository>();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient();
+builder.Services.AddTransient<ExceptionHandlingMiddleware>();
 
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (!app.Environment.IsDevelopment())
 {

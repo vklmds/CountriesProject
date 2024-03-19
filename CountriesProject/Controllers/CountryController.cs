@@ -11,49 +11,43 @@ namespace CountriesProject.Controllers
         private readonly IHttpClientFactory _clientFactory;
         private const string RestCountriesApiUrl = "https://restcountries.com/v2/all";
         private const string cacheKey = "TestKey";
-        private readonly CountryService _countryService;
+        private readonly CountryService _countryService;       
 
-        public CountryController(CountryService countryService, IHttpClientFactory clientFactory)
+        public CountryController(CountryService countryService, IHttpClientFactory clientFactory, ExceptionHandlingMiddleware exceptionHandlingMiddleware )
         {
             _countryService = countryService;
-            _clientFactory = clientFactory;
+            _clientFactory = clientFactory;           
         }
 
         [HttpGet]
         [Route("getCountries")]
         public async Task<IActionResult> GetCountries()
-        {
-            try
+        {            
+           
+            if (_countryService.IsCacheFull(cacheKey))
             {
-                if (_countryService.IsCacheFull(cacheKey))
+                var listInCache = _countryService.GetFromCache(cacheKey);
+                return Ok(listInCache);
+            }
+            else
+            {
+                var dbList = await _countryService.GetAllCountries();
+                if (dbList.Any())
                 {
-                    var listInCache = _countryService.GetFromCache(cacheKey);
-                    return Ok(listInCache);
+                    _countryService.SavedInCache(cacheKey, dbList);
+                    return Ok(dbList);
                 }
                 else
                 {
-                    var dbList = await _countryService.GetAllCountries();
-                    if (dbList.Any())
-                    {
-                        _countryService.SavedInCache(cacheKey, dbList);
-                        return Ok(dbList);
-                    }
-                    else
-                    {
-                        var _httpClient = _clientFactory.CreateClient();
-                        var countries = await _countryService.GetCountries(_httpClient, RestCountriesApiUrl);
-                        await _countryService.SaveCountries(countries);
-                        _countryService.SavedInCache(cacheKey, countries);
-                        return Ok(countries);
-                    }
+                    var _httpClient = _clientFactory.CreateClient();
+                    var countries = await _countryService.GetCountries(_httpClient, RestCountriesApiUrl);
+                    await _countryService.SaveCountries(countries);
+                    _countryService.SavedInCache(cacheKey, countries);
+                    return Ok(countries);
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-                return StatusCode(500, "Failed to complete the action");
-            }
-        }
+         }
+        
         
         
         [HttpPost]
@@ -67,4 +61,3 @@ namespace CountriesProject.Controllers
         
     }
 }
-
